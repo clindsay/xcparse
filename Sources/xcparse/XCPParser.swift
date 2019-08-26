@@ -35,6 +35,19 @@ class XCPParser {
       return (OptionType(value: option), option)
     }
     
+    func parseSubtests(subtests : [ActionTestSummaryIdentifiableObject], summaryRefIDs : inout [String]) {
+        for object in subtests {
+            if let metadataObject = object as? ActionTestMetadata {
+                if let summaryRef = metadataObject.summaryRef {
+                    summaryRefIDs.append(summaryRef.id)
+                }
+            }
+            else if let summaryGroupObject = object as? ActionTestSummaryGroup {
+                parseSubtests(subtests: summaryGroupObject.subtests, summaryRefIDs: &summaryRefIDs)
+            }
+        }
+    }
+    
     func extractScreenshots(xcresultPath : String, destination : String) throws {
         let xcresultJSON : String = console.shellCommand("xcrun xcresulttool get --path \(xcresultPath) --format json")
         let xcresultJSONData = Data(xcresultJSON.utf8)
@@ -74,29 +87,11 @@ class XCPParser {
                     let tests = testableSummary.tests
                     for test in tests {
                         if let testSummaryGroup = test as? ActionTestSummaryGroup {
-                            let subtests1 = testSummaryGroup.subtests
-                            for subtest1 in subtests1 {
-                                if let testSummaryGroup2 = subtest1 as? ActionTestSummaryGroup {
-                                    let subtests2 = testSummaryGroup2.subtests
-                                    for subtest2 in subtests2 {
-                                        if let testSummaryGroup3 = subtest2 as? ActionTestSummaryGroup {
-                                            let subtests3 = testSummaryGroup3.subtests
-                                            for subtest3 in subtests3 {
-                                                if let testMetadata = subtest3 as? ActionTestMetadata {
-                                                    if let summaryRef = testMetadata.summaryRef {
-                                                        summaryRefIDs.append(summaryRef.id)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            parseSubtests(subtests: testSummaryGroup.subtests, summaryRefIDs: &summaryRefIDs)
                         }
                     }
                 }
             }
-            
         }
         
         var screenshotRefIDs: [String] = []
