@@ -120,7 +120,7 @@ class XCPParser {
         }
         let dir = console.shellCommand("mkdir \(destination)/testScreenshots/")
         for i in 0...screenshotRefIDs.count-1 {
-            let save = console.shellCommand("xcrun xcresulttool get --path \"\(xcresultPath)\" --format raw --id \(screenshotRefIDs[i]) > \"\(destination)/testScreenshots/\(screenshotNames[i])\"")
+            let save = console.shellCommand("xcrun xcresulttool get --path \"\(xcresultPath)\" --format raw --id \(screenshotRefIDs[i]) > \"\(destination)/\(screenshotNames[i])\"")
         }
         
     }
