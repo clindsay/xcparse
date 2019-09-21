@@ -109,23 +109,45 @@ class XCPParser {
             
             let testSummary = try decoder.decode(ActionTestSummary.self, from: summaryRefData)
             
-            for activitySummary in testSummary.activitySummaries {
-                let attachments = activitySummary.attachments
-                for attachment in attachments {
-                    if let payloadRef = attachment.payloadRef {
-                        screenshotRefIDs.append(payloadRef.id)
-                    }
-                    if let filename = attachment.filename {
-                        screenshotNames.append(filename)
-                    }
-                }
+            let testIdentifier = testSummary.identifier!
+            
+            let screenshots = testSummary.activitySummaries.flatMap { activity in
+                screenshotsForActivity(activity: activity, ancestry: [])
             }
+            
+            screenshotRefIDs += screenshots.map { $0.id }
+            screenshotNames += screenshots.map { "\(testIdentifier) - \($0.name)".replacingOccurrences(of: "/", with: " - ") }
         }
         let dir = console.shellCommand("mkdir \(destination)/testScreenshots/")
         for i in 0...screenshotRefIDs.count-1 {
-            let save = console.shellCommand("xcrun xcresulttool get --path \(xcresultPath) --format raw --id \(screenshotRefIDs[i]) > \(destination)/testScreenshots/\(screenshotNames[i])")
+            let save = console.shellCommand("xcrun xcresulttool get --path \"\(xcresultPath)\" --format raw --id \(screenshotRefIDs[i]) > \"\(destination)/testScreenshots/\(screenshotNames[i])\"")
         }
         
+    }
+    
+    private func screenshotsForActivity(activity: ActionTestActivitySummary, ancestry: [ActionTestActivitySummary]) -> [(id: String, name: String)] {
+        let parent = ancestry.count > 0 ? ancestry[0] : nil
+        let grandparent = ancestry.count > 1 ? ancestry[1] : nil
+        
+        let activityName = grandparent?.title ?? ""
+        let testDescription = parent?.title ?? ""
+        
+        var result: [(id: String, name: String)] = []
+        
+        for attachment in activity.attachments {
+            if let payloadRef = attachment.payloadRef {
+                let name = "\(activityName) - \(testDescription).png"
+                
+                result.append((id: payloadRef.id, name: name))
+            }
+        }
+        
+        let subactivityResults = activity.subactivities.flatMap { subactivity in
+            return screenshotsForActivity(activity: subactivity, ancestry: [activity] + ancestry)
+        }
+        
+        return result + subactivityResults
+
     }
     
     func extractCoverage(xcresultPath : String, destination : String) throws {
