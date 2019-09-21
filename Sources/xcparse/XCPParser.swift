@@ -118,7 +118,7 @@ class XCPParser {
             screenshotRefIDs += screenshots.map { $0.id }
             screenshotNames += screenshots.map { "\(testIdentifier) - \($0.name)".replacingOccurrences(of: "/", with: " - ") }
         }
-        let dir = console.shellCommand("mkdir \(destination)/testScreenshots/")
+        let dir = console.shellCommand("mkdir -p \(destination)/")
         for i in 0...screenshotRefIDs.count-1 {
             let save = console.shellCommand("xcrun xcresulttool get --path \"\(xcresultPath)\" --format raw --id \(screenshotRefIDs[i]) > \"\(destination)/\(screenshotNames[i])\"")
         }
