@@ -126,6 +126,10 @@ class XCPParser {
     }
     
     private func screenshotsForActivity(activity: ActionTestActivitySummary, ancestry: [ActionTestActivitySummary]) -> [(id: String, name: String)] {
+        guard activity.activityType == "com.apple.dt.xctest.activity-type.attachmentContainer" || activity.activityType == "com.apple.dt.xctest.activity-type.userCreated" else {
+            return []
+        }
+        
         let parent = ancestry.count > 0 ? ancestry[0] : nil
         let grandparent = ancestry.count > 1 ? ancestry[1] : nil
         
